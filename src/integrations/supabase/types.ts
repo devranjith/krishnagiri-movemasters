@@ -14,7 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          message: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          message?: string | null
+          source?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          message?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_requests: {
+        Row: {
+          additional_message: string | null
+          approx_boxes: string | null
+          created_at: string
+          customer_id: string | null
+          destination: string
+          floors: string | null
+          heavy_items: string | null
+          id: string
+          lead_id: string | null
+          lift_available: boolean | null
+          moving_date: string | null
+          photo_paths: string[]
+          pickup_location: string
+          property_type: string | null
+          services: string[]
+        }
+        Insert: {
+          additional_message?: string | null
+          approx_boxes?: string | null
+          created_at?: string
+          customer_id?: string | null
+          destination: string
+          floors?: string | null
+          heavy_items?: string | null
+          id?: string
+          lead_id?: string | null
+          lift_available?: boolean | null
+          moving_date?: string | null
+          photo_paths?: string[]
+          pickup_location: string
+          property_type?: string | null
+          services?: string[]
+        }
+        Update: {
+          additional_message?: string | null
+          approx_boxes?: string | null
+          created_at?: string
+          customer_id?: string | null
+          destination?: string
+          floors?: string | null
+          heavy_items?: string | null
+          id?: string
+          lead_id?: string | null
+          lift_available?: boolean | null
+          moving_date?: string | null
+          photo_paths?: string[]
+          pickup_location?: string
+          property_type?: string | null
+          services?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
