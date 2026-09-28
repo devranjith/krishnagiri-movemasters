@@ -21,42 +21,37 @@ export type QuotePayload = {
 
 /**
  * Saves an enquiry as: customer -> lead -> quote_request.
+ * IDs are generated in the browser because enquiry rows are write-only
+ * (visitors cannot read them back).
  * Email notifications can be added later inside `notifyTeam()`.
  */
 export async function submitQuoteRequest(payload: QuotePayload) {
-  const { data: customer, error: customerError } = await supabase
-    .from("customers")
-    .insert({
-      full_name: payload.fullName.trim(),
-      phone: payload.phone.trim(),
-      whatsapp: payload.whatsapp?.trim() || null,
-      email: payload.email?.trim() || null,
-    })
-    .select("id")
-    .single();
+  const customerId = crypto.randomUUID();
+  const leadId = crypto.randomUUID();
 
-  // Inserts are allowed but reading back may be restricted; fall back gracefully.
-  const customerId = customer?.id ?? null;
-  if (customerError && !customerId) {
-    throw new Error("We could not save your details. Please try again or call us.");
-  }
+  const { error: customerError } = await supabase.from("customers").insert({
+    id: customerId,
+    full_name: payload.fullName.trim(),
+    phone: payload.phone.trim(),
+    whatsapp: payload.whatsapp?.trim() || null,
+    email: payload.email?.trim() || null,
+  });
+  if (customerError) throw new Error(SAVE_ERROR);
 
-  const { data: lead } = await supabase
-    .from("leads")
-    .insert({
-      customer_id: customerId,
-      source: payload.source ?? "website-quote-form",
-      status: "new",
-      message: payload.additionalMessage?.trim() || null,
-    })
-    .select("id")
-    .single();
+  const { error: leadError } = await supabase.from("leads").insert({
+    id: leadId,
+    customer_id: customerId,
+    source: payload.source ?? "website-quote-form",
+    status: "new",
+    message: payload.additionalMessage?.trim() || null,
+  });
+  if (leadError) throw new Error(SAVE_ERROR);
 
   const photoPaths = await uploadPhotos(payload.photos ?? []);
 
   const { error: quoteError } = await supabase.from("quote_requests").insert({
     customer_id: customerId,
-    lead_id: lead?.id ?? null,
+    lead_id: leadId,
     pickup_location: payload.pickupLocation.trim(),
     destination: payload.destination.trim(),
     moving_date: payload.movingDate || null,
@@ -69,10 +64,7 @@ export async function submitQuoteRequest(payload: QuotePayload) {
     additional_message: payload.additionalMessage?.trim() || null,
     photo_paths: photoPaths,
   });
-
-  if (quoteError) {
-    throw new Error("We could not send your request. Please try again or call us.");
-  }
+  if (quoteError) throw new Error(SAVE_ERROR);
 
   await notifyTeam();
   return { ok: true as const };
@@ -85,30 +77,30 @@ export async function submitContactEnquiry(input: {
   email?: string;
   message: string;
 }) {
-  const { data: customer } = await supabase
-    .from("customers")
-    .insert({
-      full_name: input.fullName.trim(),
-      phone: input.phone.trim(),
-      email: input.email?.trim() || null,
-    })
-    .select("id")
-    .single();
+  const customerId = crypto.randomUUID();
+
+  const { error: customerError } = await supabase.from("customers").insert({
+    id: customerId,
+    full_name: input.fullName.trim(),
+    phone: input.phone.trim(),
+    email: input.email?.trim() || null,
+  });
+  if (customerError) throw new Error(SAVE_ERROR);
 
   const { error } = await supabase.from("leads").insert({
-    customer_id: customer?.id ?? null,
+    customer_id: customerId,
     source: "website-contact-form",
     status: "new",
     message: input.message.trim(),
   });
-
-  if (error) {
-    throw new Error("We could not send your message. Please try again or call us.");
-  }
+  if (error) throw new Error(SAVE_ERROR);
 
   await notifyTeam();
   return { ok: true as const };
 }
+
+const SAVE_ERROR =
+  "We could not send your request. Please try again, or call / WhatsApp us directly.";
 
 async function uploadPhotos(files: File[]): Promise<string[]> {
   const paths: string[] = [];
@@ -121,8 +113,8 @@ async function uploadPhotos(files: File[]): Promise<string[]> {
 }
 
 /**
- * Placeholder for future email/SMS notification to the business team.
- * Hook a server function in here when notifications are needed.
+ * Placeholder for a future email / SMS notification to the business team.
+ * Add a server function call here when notifications are needed.
  */
 async function notifyTeam(): Promise<void> {
   return;
