@@ -86,7 +86,9 @@ export function QuoteForm() {
   }
 
   function validateStep(index: number) {
-    const result = stepSchemas[index].safeParse(form as unknown as Record<string, unknown>);
+    const schema = stepSchemas[index];
+    if (!schema) return true;
+    const result = schema.safeParse(form as unknown as Record<string, unknown>);
     if (result.success) {
       setErrors({});
       return true;
@@ -424,8 +426,8 @@ function Field({
 }: {
   label: string;
   htmlFor: string;
-  error?: string;
-  required?: boolean;
+  error?: string | undefined;
+  required?: boolean | undefined;
   children: React.ReactNode;
 }) {
   return (
