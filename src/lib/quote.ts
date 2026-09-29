@@ -74,7 +74,7 @@ export async function submitQuoteRequest(payload: QuotePayload) {
 export async function submitContactEnquiry(input: {
   fullName: string;
   phone: string;
-  email?: string;
+  email?: string | undefined;
   message: string;
 }) {
   const customerId = crypto.randomUUID();
